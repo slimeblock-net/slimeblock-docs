@@ -9,7 +9,9 @@ interface RouteParams {
 
 export async function GET(_req: Request, { params }: { params: Promise<RouteParams> }) {
   const { slug } = await params;
-  const page = source.getPage(slug);
+  // the root page is exported as /llms.mdx/index, since a plain /llms.mdx
+  // file would conflict with the /llms.mdx/* directory in static export
+  const page = source.getPage(slug?.length === 1 && slug[0] === 'index' ? [] : slug);
   if (!page) notFound();
 
   return new Response(await getLLMText(page), {
@@ -20,5 +22,7 @@ export async function GET(_req: Request, { params }: { params: Promise<RoutePara
 }
 
 export function generateStaticParams() {
-  return source.generateParams();
+  return source.getPages().map((page) => ({
+    slug: page.slugs.length === 0 ? ['index'] : [...page.slugs],
+  }));
 }
